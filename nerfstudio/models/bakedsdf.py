@@ -44,7 +44,7 @@ class BakedSDFModelConfig(VolSDFModelConfig):
     """BakedSDF Model Config"""
 
     _target: Type = field(default_factory=lambda: BakedSDFFactoModel)
-    num_proposal_samples_per_ray: Tuple[int] = (256, 96)
+    num_proposal_samples_per_ray: Tuple[int, ...] = (256, 96)
     """Number of samples per ray for the proposal network."""
     num_neus_samples_per_ray: int = 48
     """Number of samples per ray for the nerf network."""
@@ -90,7 +90,6 @@ class BakedSDFModelConfig(VolSDFModelConfig):
     eikonal_loss_mult_start: float = 0.01
     eikonal_loss_mult_end: float = 0.1
     eikonal_loss_mult_slop: float = 2.0
-
 
 class BakedSDFFactoModel(VolSDFModel):
     """BakedSDF model
@@ -264,6 +263,9 @@ class BakedSDFFactoModel(VolSDFModel):
         if self.training:
             # eikonal loss
             grad_theta = outputs["eik_grad"]
+            # s3im loss
+            if self.config.s3im_loss_mult > 0:
+                loss_dict["s3im_loss"] = self.s3im_loss(image, outputs["rgb"]) * self.config.s3im_loss_mult
             if self.config.use_spatial_varying_eikonal_loss:
 
                 points_norm = outputs["points_norm"][..., 0]
